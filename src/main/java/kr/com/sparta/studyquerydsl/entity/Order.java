@@ -2,12 +2,11 @@ package kr.com.sparta.studyquerydsl.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "order")
+@Table(name = "`order`")
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
