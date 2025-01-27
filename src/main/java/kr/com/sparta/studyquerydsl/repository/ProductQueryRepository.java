@@ -4,6 +4,7 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import kr.com.sparta.studyquerydsl.dto.ProductDto.SearchRequest;
 import kr.com.sparta.studyquerydsl.entity.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ import java.net.PasswordAuthentication;
 import java.util.List;
 
 import static kr.com.sparta.studyquerydsl.entity.QProduct.product;
+import static org.hibernate.query.results.Builders.fetch;
 
 /*
 todo: Repository,RequiredArgsConstructor 어노테이션의 의미 찾아서 적기
@@ -35,31 +37,56 @@ public class ProductQueryRepository {
     }
 
     //조건 조회(카테고리)
-    public List<Product> findProductsByCategory() {
+    public List<Product> findProductsByPrice() {
         return queryFactory.selectFrom(product)
             .where(
                 product.price.eq(30000.0))
             .fetch();
     }
 
+    //조건 조회(카테고리)
+    public List<Product> findProductsByCategory(SearchRequest request) {
+        return queryFactory.selectFrom(product)
+            .where(
+                eqCategory(request.category()),
+                goeMinPrice(request.minPrice()),
+                loeMaxPrice(request.maxPrice())
+                )
+            .fetch();
+    }
+
+
     private BooleanExpression eqPrice(Double price) {
         if(price == null){
             return null;
         }
+
         return product.price.eq(price);
     }
 
-//
-//    private BooleanExpression eqCategory(String category){
-//        return null;
-//    }
-//
-//    private BooleanExpression gteMenPrice(Double minPrice){
-//        return null;
-//    }
-//    private BooleanExpression lteMaxPrice(Double maxPrice){
-//        return null;
-//    }
+
+
+    private BooleanExpression eqCategory(String category){
+        if(category == null) return null;
+        return product.category.eq(category);
+    }
+
+
+    private BooleanExpression goeMinPrice(Double minPrice){
+        if(minPrice == null) return null;
+        /*
+        gt : great then
+        goe : great or equals
+         */
+        return product.price.goe(minPrice);
+    }
+    private BooleanExpression loeMaxPrice(Double maxPrice){
+        if(maxPrice == null) return null;
+        return product.price.loe(maxPrice);
+    }
+
+
+
 //
 //    //페이징 조회
 //    public Page<Product> findProductsByPage(){

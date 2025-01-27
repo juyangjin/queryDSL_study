@@ -26,10 +26,11 @@ public class ProductController {
 
     @GetMapping("/search")
     public ResponseEntity<?> search() {
-        return new ResponseEntity<>(productQueryRepository.findProductsByCategory(), HttpStatus.OK);
+        return new ResponseEntity<>(productQueryRepository.findProductsByPrice(), HttpStatus.OK);
     }
-//    @GetMapping
-//    public ResponseEntity<?> search(@ModelAttribute ProductDto.SearchRequest request) {
-//        return new ResponseEntity<>(productQueryRepository.findAllProducts(), HttpStatus.OK);
-//    }
+
+    @GetMapping("search2")
+    public ResponseEntity<?> search2(@ModelAttribute ProductDto.SearchRequest request) {
+        return new ResponseEntity<>(productQueryRepository.findProductsByCategory(request), HttpStatus.OK);
+    }
 }
