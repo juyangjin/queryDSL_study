@@ -35,5 +35,9 @@ public class ProductController {
         return new ResponseEntity<>(productQueryRepository.findProductsByCategory(request, pageable), HttpStatus.OK);
     }
 
+    @GetMapping("search3")
+    public ResponseEntity<?> search3(@ModelAttribute ProductDto.SearchRequest request, Pageable pageable) {
+        return new ResponseEntity<>(productQueryRepository.search(request, pageable), HttpStatus.OK);
+    }
 
 }

@@ -2,9 +2,12 @@ package kr.com.sparta.studyquerydsl.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.Optional;
+import kr.com.sparta.studyquerydsl.dto.ProductDto;
 import kr.com.sparta.studyquerydsl.dto.ProductDto.SearchRequest;
 import kr.com.sparta.studyquerydsl.entity.Product;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +20,9 @@ import org.springframework.stereotype.Repository;
 import java.net.PasswordAuthentication;
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.select;
 import static kr.com.sparta.studyquerydsl.entity.QProduct.product;
+import static kr.com.sparta.studyquerydsl.entity.QReview.review;
 import static org.hibernate.query.results.Builders.fetch;
 
 /*
@@ -66,14 +71,53 @@ public class ProductQueryRepository {
     따라서 이를 위한 추가 쿼리문을 작성해야할 필요가 있다.
      */
 
-        Long totalCount = queryFactory.select(Wildcard.count). //wildcard.count를 사용하면 69번째에서 쓰인 product의 갯수를 반환해준다.
+        //n
+        Long totalCount = Optional.ofNullable(queryFactory.select(Wildcard.count). //wildcard.count를 사용하면 69번째에서 쓰인 product의 갯수를 반환해준다.
             from(product)
             .where(
                 eqCategory(request.category()),
                 goeMinPrice(request.minPrice()),
                 loeMaxPrice(request.maxPrice())
             )
-            .fetchOne(); //하나만 조회할 때는 fetchOne을 사용한다.
+            .fetchOne())//하나만 조회할 때는 fetchOne을 사용한다. 이는 nullable이기 때문에 위에 Optional.ofNullable을 사용하여 null이어도 에러가 뜨지 않게 수정해야한다.
+            .orElse(0L); //null일 시에는 0이라고 나오게 설정. 이걸 설정하지 않으면 500에러가 날 수 있으니 주의해야 한다.
+
+        return new PageImpl<>(products, pageable, totalCount);
+    }
+
+
+    //조건 조회(카테고리)
+    public Page<ProductDto.SearchResponse> search(SearchRequest request,Pageable pageable) {
+        List<ProductDto.SearchResponse> products =  queryFactory.select(
+                Projections.constructor(
+                    ProductDto.SearchResponse.class,
+                    //파라미터 값
+                    product,
+                    //리뷰개수(서브쿼리 활용)
+                    select(Wildcard.count)
+                        .from(review)
+                        .where(product.id.eq(review.product.id)) //product의 id와 review의 product id가 동일한 경우에만 호출
+                ) //constructor는 dto의 생성자를 이용해서 처리하는 방식으로 직관성 때문에 많이 사용된다.
+            )
+            .from(product)
+            .where(
+                eqCategory(request.category()),
+                goeMinPrice(request.minPrice()),
+                loeMaxPrice(request.maxPrice())
+            )
+            .limit(pageable.getPageSize()) //페이지당 몇 개를 가져올 지
+            .offset(pageable.getOffset()) //몇 번째 페이지부터 가져올 것인지.
+            .fetch();
+
+        Long totalCount = Optional.ofNullable(queryFactory.select(Wildcard.count). //wildcard.count를 사용하면 69번째에서 쓰인 product의 갯수를 반환해준다.
+                from(product)
+                .where(
+                    eqCategory(request.category()),
+                    goeMinPrice(request.minPrice()),
+                    loeMaxPrice(request.maxPrice())
+                )
+                .fetchOne())//하나만 조회할 때는 fetchOne을 사용한다. 이는 nullable이기 때문에 위에 Optional.ofNullable을 사용하여 null이어도 에러가 뜨지 않게 수정해야한다.
+            .orElse(0L); //null일 시에는 0이라고 나오게 설정. 이걸 설정하지 않으면 500에러가 날 수 있으니 주의해야 한다.
 
         return new PageImpl<>(products, pageable, totalCount);
     }
