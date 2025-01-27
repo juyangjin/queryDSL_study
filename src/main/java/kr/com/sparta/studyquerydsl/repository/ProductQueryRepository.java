@@ -3,11 +3,13 @@ package kr.com.sparta.studyquerydsl.repository;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import kr.com.sparta.studyquerydsl.dto.ProductDto.SearchRequest;
 import kr.com.sparta.studyquerydsl.entity.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Repository;
@@ -45,14 +47,35 @@ public class ProductQueryRepository {
     }
 
     //조건 조회(카테고리)
-    public List<Product> findProductsByCategory(SearchRequest request) {
-        return queryFactory.selectFrom(product)
+    public Page<Product> findProductsByCategory(SearchRequest request,Pageable pageable) {
+        List<Product> products =  queryFactory.selectFrom(product)
             .where(
                 eqCategory(request.category()),
                 goeMinPrice(request.minPrice()),
                 loeMaxPrice(request.maxPrice())
                 )
+            .limit(pageable.getPageSize()) //페이지당 몇 개를 가져올 지
+            .offset(pageable.getOffset()) //몇 번째 페이지부터 가져올 것인지.
             .fetch();
+
+    /*
+    페이지 객체에는
+    int getTotalPages(); 라는 전체의 페이지 갯수,
+    또는
+    long getTotalElements(); 라는 전체 원소의 갯수에 대한 것도 응답해주게 되어있다.
+    따라서 이를 위한 추가 쿼리문을 작성해야할 필요가 있다.
+     */
+
+        Long totalCount = queryFactory.select(Wildcard.count). //wildcard.count를 사용하면 69번째에서 쓰인 product의 갯수를 반환해준다.
+            from(product)
+            .where(
+                eqCategory(request.category()),
+                goeMinPrice(request.minPrice()),
+                loeMaxPrice(request.maxPrice())
+            )
+            .fetchOne(); //하나만 조회할 때는 fetchOne을 사용한다.
+
+        return new PageImpl<>(products, pageable, totalCount);
     }
 
 

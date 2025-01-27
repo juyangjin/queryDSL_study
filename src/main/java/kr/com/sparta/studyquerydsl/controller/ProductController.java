@@ -4,6 +4,7 @@ import kr.com.sparta.studyquerydsl.dto.ProductDto;
 import kr.com.sparta.studyquerydsl.entity.Product;
 import kr.com.sparta.studyquerydsl.repository.ProductQueryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,9 @@ public class ProductController {
     }
 
     @GetMapping("search2")
-    public ResponseEntity<?> search2(@ModelAttribute ProductDto.SearchRequest request) {
-        return new ResponseEntity<>(productQueryRepository.findProductsByCategory(request), HttpStatus.OK);
+    public ResponseEntity<?> search2(@ModelAttribute ProductDto.SearchRequest request, Pageable pageable) {
+        return new ResponseEntity<>(productQueryRepository.findProductsByCategory(request, pageable), HttpStatus.OK);
     }
+
+
 }
