@@ -1,6 +1,7 @@
 package kr.com.sparta.studyquerydsl.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import kr.com.sparta.studyquerydsl.entity.Product;
@@ -30,14 +31,24 @@ public class ProductQueryRepository {
     .fetch()는 앞의 쿼리문을 실행시키겠다는 의미
      */
     public List<Product> findAllProducts() {
-        return queryFactory.selectFrom(product
-        ).fetch();
+        return queryFactory.selectFrom(product).fetch();
     }
-//
-//    //조건 조회(카테고리)
-//    public List<Product> findProductsByCategory() {
-//        return null;
-//    }
+
+    //조건 조회(카테고리)
+    public List<Product> findProductsByCategory() {
+        return queryFactory.selectFrom(product)
+            .where(
+                product.price.eq(30000.0))
+            .fetch();
+    }
+
+    private BooleanExpression eqPrice(Double price) {
+        if(price == null){
+            return null;
+        }
+        return product.price.eq(price);
+    }
+
 //
 //    private BooleanExpression eqCategory(String category){
 //        return null;
